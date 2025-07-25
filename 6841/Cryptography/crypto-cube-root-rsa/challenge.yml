@@ -9,5 +9,7 @@ flags:
   - flag: flag{cube_root_rsa}
 hints:
   - content: "you might have to break out some euclidean maths."
+  - cost: 0
+
 tags:
   - cryptography

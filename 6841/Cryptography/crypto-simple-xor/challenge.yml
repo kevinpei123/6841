@@ -9,6 +9,7 @@ flags:
   - flag: flag{simple_xor}
 hints:
   - content: "brute-force every printable byte (0x20-0x7e) until you get the flag"
+  - cost: 0
 tags:
   - xor
   - cryptography

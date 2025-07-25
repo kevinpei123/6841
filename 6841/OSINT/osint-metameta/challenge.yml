@@ -3,13 +3,16 @@ category: OSINT
 value: 150
 description: |
   weird log
-attachments:
+files:
   - screenshot.png
 flags:
   - flag: flag{simple_osint}
 hints:
   - content: "google the error text to ID the website."
+  - cost: 0
   - content: "follow the trail to https://pastebin.com/KU5Y48zX."
+  - cost: 0
   - content: "rot13 the paste to reveal the flag."
+  - cost: 0
 tags:
   - osint

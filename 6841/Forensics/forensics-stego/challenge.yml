@@ -9,6 +9,8 @@ flags:
   - flag: flag{stegosaurus}
 hints:
   - content: "run `exiftool -Comment cover.jpg` to spot the hidden QR filename."
+  - cost: 0
   - content: "use `qrdecode` for the passphrase, then `steghide extract`."
+  - cost: 0
 tags:
   - forensics

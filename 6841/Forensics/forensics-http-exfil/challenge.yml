@@ -9,6 +9,8 @@ flags:
   - flag: flag{http:forensics}
 hints:
   - content: "export HTTP objects with tshark or Wireshark."
+  - cost: 0
   - content: "one exported file is a ZIP that hides a PNG."
+  - cost: 0
 tags:
   - forensics

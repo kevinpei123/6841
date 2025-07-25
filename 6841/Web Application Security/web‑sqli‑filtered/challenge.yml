@@ -10,7 +10,9 @@ flags:
   - flag: flag{sqli_filtered}
 hints:
   - content: "try UNION-based payloads: numeric only, no quotes."
+  - cost: 0
   - content: "example: `/lookup?uid=0 UNION SELECT sql FROM sqlite_master--`"
+  - cost: 0
 tags:
   - web
   - sqli

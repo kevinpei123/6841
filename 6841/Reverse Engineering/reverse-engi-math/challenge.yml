@@ -10,8 +10,10 @@ flags:
 hints:
   - content: |
       strings crackme_rsa_mid | grep 1600`
+  - cost: 0
   - content: |
       use Fermat factorisation, then solve
+  - cost: 0
 tags:
   - reverse
   - math
