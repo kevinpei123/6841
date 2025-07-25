@@ -1,0 +1,14 @@
+name: Stego‑2x Master
+category: Forensics
+value: 500
+description: |
+  weird jpeg, why is it so massive?
+attachments:
+  - cover.jpg
+flags:
+  - flag: flag{stegosaurus}
+hints:
+  - content: "run `exiftool -Comment cover.jpg` to spot the hidden QR filename."
+  - content: "use `qrdecode` for the passphrase, then `steghide extract`."
+tags:
+  - forensics

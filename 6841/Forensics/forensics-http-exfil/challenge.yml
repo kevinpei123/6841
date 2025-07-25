@@ -1,0 +1,14 @@
+name: HTTP Exfiltration
+category: Forensics
+value: 400
+description: |
+  malicious client stole data over HTTP. get the flag back
+attachments:
+  - network.pcap
+flags:
+  - flag: flag{http:forensics}
+hints:
+  - content: "export HTTP objects with tshark or Wireshark."
+  - content: "one exported file is a ZIP that hides a PNG."
+tags:
+  - forensics
