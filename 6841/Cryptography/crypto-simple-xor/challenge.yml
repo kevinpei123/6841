@@ -1,0 +1,14 @@
+name: Simple XOR
+category: Cryptography
+value: 100
+description: |
+  hex string
+attachments:
+  - cipher.txt
+flags:
+  - flag: flag{simple_xor}
+hints:
+  - content: "brute-force every printable byte (0x20-0x7e) until you get the flag"
+tags:
+  - xor
+  - cryptography

@@ -1,0 +1,13 @@
+name: Cube-Root RSA
+category: Cryptography
+value: 500
+description: |
+  RSA with e=3... or is it?  compute the root of the ciphertext and get the flag.
+attachments:
+  - rsa3.txt
+flags:
+  - flag: flag{cube_root_rsa}
+hints:
+  - content: "you might have to break out some euclidean maths."
+tags:
+  - cryptography
