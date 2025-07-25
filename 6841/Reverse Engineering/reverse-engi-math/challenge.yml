@@ -1,0 +1,17 @@
+name: RSA - Near-Prime
+category: Reverse Engineering
+value: 400
+description: |
+  stripped x86-64 ELF asks for the private exponent
+attachments:
+  - crackme_rsa_mid
+flags:
+  - flag: flag{near_prime_math}
+hints:
+  - content: |
+      strings crackme_rsa_mid | grep 1600`
+  - content: |
+      use Fermat factorisation, then solve
+tags:
+  - reverse
+  - math

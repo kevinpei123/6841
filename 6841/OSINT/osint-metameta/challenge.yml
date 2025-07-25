@@ -1,0 +1,15 @@
+name: Simple OSINT
+category: OSINT
+value: 150
+description: |
+  weird log
+attachments:
+  - screenshot.png
+flags:
+  - flag: flag{simple_osint}
+hints:
+  - content: "google the error text to ID the website."
+  - content: "follow the trail to https://pastebin.com/KU5Y48zX."
+  - content: "rot13 the paste to reveal the flag."
+tags:
+  - osint
