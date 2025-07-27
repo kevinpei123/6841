@@ -4,7 +4,7 @@ import sqlite3, os, re
 
 app = Flask(__name__)
 DB = os.path.splitext(__file__)[0] + ".db"
-FLAG = os.getenv("FLAG") or "flag{sqli_filtered}"
+FLAG = "flag{sqli_filtered}"
 
 def init_db():
     conn = sqlite3.connect(DB)
@@ -12,7 +12,7 @@ def init_db():
     cur.execute("CREATE TABLE IF NOT EXISTS users(uid INTEGER, name TEXT)")
     cur.execute("CREATE TABLE IF NOT EXISTS very_secret(flag TEXT)")
     try:
-        cur.executemany("INSERT INTO users VALUES (?,?)", [(1,'alice'), (2,'bob'), (3,'charlie')])
+        cur.executemany("INSERT INTO users VALUES (?,?)", [(1,'A'), (2,'B'), (3,'C')])
     except Exception:
         pass
     try:
@@ -24,12 +24,31 @@ def init_db():
 
 init_db()
 
+
+@app.route("/")
+def home():
+    return """
+    <!doctype html>
+    <html>
+      <head><meta charset="utf-8"><title>Lookup</title></head>
+      <body>
+        <h1>User Lookup</h1>
+        <form action="/lookup" method="get">
+          <label for="uid">UID:</label>
+          <input id="uid" name="uid" placeholder="e.g., 1">
+          <button type="submit">Search</button>
+        </form>
+      </body>
+    </html>
+    """
+
+
 @app.route("/lookup")
 def lookup():
     uid = request.args.get("uid", "")
     forbidden = re.compile("[\'\";]")
     if forbidden.search(uid):
-        return "Nice try 🖐", 400
+        return "Nice try", 400
 
     query = "SELECT name FROM users WHERE uid = " + uid
     try:
