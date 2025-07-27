@@ -5,7 +5,7 @@
 
 ---
 
-## Challenge Flow
+## Simple Challenge Flow
 
 1. The application only has a single point of GET /lookup?uid=<value>
 2. Using `1` returns `User name: alice`, confirming there is a `users` table
@@ -25,7 +25,7 @@ I increased the difficulty by prohibiting the use of '," and ; through using a n
 
 ---
 
-## Build and Solution Notes (How The Task Was Made and How A solution can be found)
+## Indepth Build and Solution Notes
 
 
 This CTF challenge is a tiny flask web app that usese SQLite. It exposes one endpoint which is the GET /lookup?uid=<value> that looks up a user's name by uid and prints it. 
@@ -35,18 +35,18 @@ This task initially creates an sqlite file next to the script as a .db and it ma
     query = "SELECT name FROM users WHERE uid = ?", (int(uid),)
 ```
 compared to the much safer version listed below it. This allows for sql injections as this task in particular is an integer-based in-band union based SQL injection, playing off the classic UNION-based sqli with a numeric filter that exludes string literals. This filter increases the difficulty by narrowing the attack surface and forcing knowledge of SQLite's schema and ordering tricks and column cardinality. I also limited the use of error checking in this test where the use of "return "SQL error", 400" as a result of regexing with certain commands that are used to usually test sql injections. 
-To demonstrate this, here is a list of the common sql attacks and how they fail 
+To demonstrate this, here is a list of the common sql attacks and how they fail against the filter and how it forces certain difficulty. 
 
-| Attack style                      | With Filter      | Without Filter  | Example payload | What happens/ why|
+| Attack style | With Filter | Without Filter | Example payload | What happens / why|
 | - | - | - | - | - |
-| **Tautology** | **Yes**, but only numeric form | **Yes** | `1 OR 1=1--` | WHERE becomes `uid = 1 OR 1=1` → many rows; app prints first (likel “A”). |
-| **String‑based tautology**        | **No** (needs quotes)                        | **Trivial**                         | `0 OR 'a'='a'--`                                                                                                                                         | Quotes make it easy to force TRUE; blocked in filtered version.                                                  |
-| **UNION‑based (1 column)**        | **Yes** (numeric/quote‑less UNION)           | **Trivial**                         | `0 UNION SELECT flag FROM very_secret--`                                                                                                                 | Column count = 1 matches `name`; returns the flag.                                                               |
-| **UNION + targeted schema query** | **Harder** (no quotes for predicates)        | **Easy**                            | `0 UNION SELECT sql FROM sqlite_master WHERE name='very_secret'--`                                                                                       | With quotes: directly filter to the target table; without quotes it’s simpler.                                   |
-| **Boolean‑based blind**           | **Possible** (use functions, no quotes)      | **Easier** (use quoted chars/LIKE)  | With filter: `1 AND substr((SELECT flag FROM very_secret),1,1)=char(102)--`  \| Without filter: `1 AND substr((SELECT flag FROM very_secret),1,1)='f'--` | You infer TRUE/FALSE by response difference (`User name: …` vs `Len=0`).                                         |
-| **Error‑based**                   | **Weak** (generic “SQL error” hides details) | **Still weak** (same masking)       | `1'`  (causes syntax error)                                                                                                                              | App returns just “SQL error”, so you can’t read DB error text either way.                                        |
-| **Time‑based blind**              | **Not practical on SQLite**                  | **Not practical on SQLite**         | (SQLite lacks `SLEEP()`)                                                                                                                                 | SQLite doesn’t have a native sleep; timing tricks are unreliable.                                                |
-| **Stacked queries (`; DROP …`)**  | **Blocked** by filter                        | **Usually still blocked by driver** | `1; DROP TABLE users--`                                                                                                                                  | Python’s `sqlite3.execute()` only allows one statement; stacked won’t run unless the app used `executescript()`. |
+| **Tautology** | **Yes** | **Yes** | `1 OR 1=1--` | WHERE becomes `uid = 1 OR 1=1` → many rows and app prints first (“A”). |
+| **String‑based tautology** | **No** (needs quotes) | **Yes** | `0 OR 'a'='a'--` | Quotes make it easy to force TRUE but blocked in filtered version. |
+| **UNION‑based** | **Yes** | **Yes** | `0 UNION SELECT flag FROM very_secret--` | Column count = 1 matches `name` and returns the flag.                                                               |
+| **UNION + targeted schema query** | **Harder** (no quotes for predicates) | **Easy** | `0 UNION SELECT sql FROM sqlite_master WHERE name='very_secret'--` | With quotes: directly filter to the target table; without quotes it’s simpler. |
+| **Boolean‑based blind** | **Possible** (using functions) | **Easier** (use quoted chars/LIKE)  | With filter: `1 AND substr((SELECT flag FROM very_secret),1,1)=char(102)--`  \| Without filter: `1 AND substr((SELECT flag FROM very_secret),1,1)='f'--` | You infer TRUE/FALSE by response difference (`User name: …` vs `Len=0`).                                         |
+| **Error‑based** | **Weak** (generic “SQL error” hides details) | **Still weak** (same masking) | `1'`  (causes syntax error) | App returns just “SQL error”, so you can’t infer from error text either way. |
+| **Time‑based blind** | **N/A** | **N/A** | **N/A** | SQLite doesn’t have a sleep functions |
+| **Stacked queries**  | **No** | **Yes** | `1; DROP TABLE users--` | `sqlite3.execute()` only allows one statement so stacked won’t run unless the app used `executescript()`. |
 
 
 
