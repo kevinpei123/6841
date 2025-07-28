@@ -20,6 +20,38 @@ I was not confident with doing these types of xors so that I wrote an initial cr
     
 
 
+
+### Build Notes
+
+This task is a **single‑byte XOR**: the plaintext flag is XORed with one byte, then hex‑encoded into `cipher.txt`.
+
+### Solution Notes
+
+1. Hex‑decode the ciphertext
+
+```bash
+xxd -r -p cipher.txt > cipher.bin
+```
+
+2. Brute‑force single‑byte XOR (printable keys 0x20–0x7e)
+
+```bash
+python3 - <<'PY'
+import string
+c = bytes.fromhex(open('cipher.txt').read().strip())
+for k in range(0x20, 0x7f):
+    p = bytes(b ^ k for b in c)
+    if b"flag{" in p and all(chr(x) in string.printable for x in p):
+        print(f"key=0x{k:02x} -> {p.decode()}")
+        break
+PY
+```
+
+and it prints the flag.
+
+
+
+
 ## Related / Future
 
 - Repeating‑Key XOR (Vigenère‑Style)

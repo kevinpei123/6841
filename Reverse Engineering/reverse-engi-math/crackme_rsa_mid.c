@@ -22,9 +22,12 @@ int main(void) {
     }
 
     const uint64_t N = 16000000472000002997ULL;
-    const uint64_t C = 13929899205717235763ULL;
+    const uint64_t C = 13758694591648783415ULL;  // <— NEW C for your short flag
 
     uint64_t m = modexp(C, d, N);
+
+    /* Optional: show the 8-byte plaintext as hex */
+    printf("%016" PRIx64 "\n", m);
 
     char buf[32];
     int idx = 0;

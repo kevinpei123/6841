@@ -6,10 +6,10 @@ description: |
 attachments:
   - crackme_rsa_mid
 flags:
-  - flag: flag{near_prime_math}
+  - flag: flag{flagRSA!}
 hints:
   - content: |
-      strings crackme_rsa_mid | grep 1600`
+      Use GDB
   - cost: 0
   - content: |
       use Fermat factorisation, then solve

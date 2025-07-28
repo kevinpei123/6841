@@ -31,6 +31,99 @@ I also increased the difficulty by adding a large number of layers to the ctf wh
 
 ---
 
+
+
+
+## Indepth Build and Solution Notes
+
+### Build Section
+
+This challenge is a compact OSINT pivot chain that starts from a single file `screenshot.png` and drives a four‑step access→decode→access→decode path to a final image whose metadata contains the flag.
+It implements the following artifacts and breadcrumbs:
+the on‑image distraction text `Fatal build‑kite 9d2e12b7`, the EXIF Comment tag `KU5Y48zX` (a Pastebin‑looking ID), a Pastebin paste whose content is ROT13 of an Imgur or other hosted URL, and a downloadable image whose EXIF Comment holds the final flag. Because many hosts strip metadata in previews, I validated that the direct file still retains EXIF. 
+
+Because the first breadcrumb lives in image metadata, solvers must check EXIF rather than chase the visible string on the pixels; the visible text is a deliberate red herring. The ROT13 layer is intentionally light‑weight so the focus stays on pivot discipline. The major issue I accounted for was metadata stripping by image hosts; I tested the direct download path (or self‑hosted file) to ensure the EXIF `Comment` with the flag persists. I initially considered making the paste discoverable from the on‑screen text, but because that risks guessability, EXIF is preferred for evidence and controlled difficulty. 
+
+
+EXIF is the Exchangeable Image File Format which is a standard for storing metadata inside image files, it is usually used to describe how/where a photo was taken or processed and lets software organize/search photos without changing pixels. I used it in this case to write comments for each of the photos. 
+
+
+
+---
+
+## Solution Section
+
+1. First I extract the initial breadcrumb from the PNG using EXIF tooling.
+   It is a straightforward step to confirm whether the image contains a metadata hint; as a result, it can be used to recover the Pastebin‑style ID so that the users can progress with the challenge.
+   The command I used was:
+
+```bash
+exiftool screenshot.png | grep -i 'comment'
+```
+
+where `exiftool` prints the metadata and `grep -i 'comment'` narrows to the EXIF Comment field.
+
+and it gave me the results of
+
+```
+Comment                         : KU5Y48zX
+```
+
+2. Fetch the Paste by ID (pivot to web)
+
+Open in a browser:
+
+```bash
+curl -s https://pastebin.com/raw/KU5Y48zX
+```
+
+This returns a URL‑shaped string but **ROT13**‑obfuscated (starts with `uggc://`).
+
+3. Decode the ROT13 to recover the actual URL
+
+Use a simple shell transform:
+
+```bash
+curl -s https://pastebin.com/raw/KU5Y48zX | tr 'A-Za-z' 'N-ZA-Mn-za-m'
+```
+
+This yields:
+
+```
+https://imgur.com/gallery/you-are-on-right-track-d2q5etf
+```
+
+4. Download the image file
+
+Open the gallery and copy the direct image link or construct the direct host path, then download:
+
+```bash
+curl -L -o clue.png "https://imgur.com/gallery/you-are-on-right-track-d2q5etf"
+```
+
+
+5. Read EXIF from the final image to get the flag of flag{simple\_osint}
+
+```bash
+exiftool clue.png | grep -i 'comment'
+```
+
+and it gave me the results of
+
+```
+Comment                         : flag{simple_osint}
+```
+
+---
+
+
+
+
+
+
+
+
+
 ## Related & Future Variants
 
 
